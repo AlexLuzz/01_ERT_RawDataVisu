@@ -58,7 +58,7 @@ def add_meas_ele(df):
         df.loc[:, 'meas_ele'] = df.apply(lambda row: f"{row['A']}_{row['B']}", axis=1)
     return df
 
-def load_amp_files(file_paths, n_elec_bh=8, delete_columns=None, clear_electrodes=None, detect_by_first_measurement=True):
+def load_amp_files(file_paths=None, n_elec_bh=8, delete_columns=None, clear_electrodes=None, detect_by_first_measurement=True):
     """
     Load multiple ABEM Multi-Purpose Format (.AMP) files into a single pandas DataFrame.
     
@@ -68,9 +68,17 @@ def load_amp_files(file_paths, n_elec_bh=8, delete_columns=None, clear_electrode
     :return: A concatenated pandas DataFrame containing the data from all files with an additional 'Survey' column.
     """
     try:
+        # Default folder path
+        default_folder = 'C:/Users/AQ96560/OneDrive - ETS/Géophysique appliquée - GTO365 - Berlier-Bergman Time-Lapse/'
+
+        # If file_paths is None, load all .AMP files from the default folder
+        if file_paths is None:
+            file_paths = glob.glob(os.path.join(default_folder, '*.AMP'))
+
         # Set default columns to delete if none provided
         if delete_columns is None:
-            delete_columns = ['A(y)', 'A(z)', 'B(y)', 'B(z)', 'M(y)', 'M(z)', 'N(y)', 'N(z)']
+            delete_columns = ['A(y)', 'A(z)', 'B(y)', 'B(z)', 'M(y)', 'M(z)', 'N(y)', 'N(z)', 'T(On)', 'T(0)', 'Error(ms)',
+                              'T(N):01', 'T(N):02', 'T(N):03', 'T(N):04', 'T(N):05', 'T(N):06', 'T(N):07', 'T(N):08', 'T(N):09', 'T(N):10']
         
         # Ensure '32767' is always included in electrodes to clear
         if clear_electrodes is None:
@@ -114,11 +122,16 @@ def load_amp_files(file_paths, n_elec_bh=8, delete_columns=None, clear_electrode
             # Create a DataFrame with the header
             df = pd.DataFrame(data, columns=header)
 
-            # Rename columns to remove '(x)' and keep only the base name
-            df.columns = df.columns.str.replace(r'\(x\)', '', regex=True)
-
             # Remove specified columns if they exist in the DataFrame
             df.drop(columns=[col for col in delete_columns if col in df.columns], inplace=True)
+
+            # Check if 'App.Ch.(ms)' columns exist and rename them based on their index
+            app_ch_indices = [i for i, col in enumerate(df.columns) if col == 'App.Ch.(ms)']
+            for i, col_index in enumerate(app_ch_indices, start=1):
+                df.columns.values[col_index] = f'App.Ch.{i:02}(ms)'
+
+            # Rename columns to remove '(x)' and keep only the base name
+            df.columns = df.columns.str.replace(r'/(x/)', '', regex=True)
 
             for electrode_col in ['A', 'B', 'M', 'N']:
                 if electrode_col in df.columns:
@@ -138,14 +151,18 @@ def load_amp_files(file_paths, n_elec_bh=8, delete_columns=None, clear_electrode
                 # Use the first measurement to detect new surveys
                 first_measurement = df.iloc[0][['A', 'B', 'M', 'N']].astype(str).values
 
-                for i in range(1, len(df)):          
+                for i in range(1, len(df)):
                     # Compare the current measurement with the first measurement
                     current_measurement = df.iloc[i][['A', 'B', 'M', 'N']].astype(str).values
-                    
+
                     # Detect new survey when encountering the first measurement again
-                    if np.array_equal(current_measurement, first_measurement):
+                    # or when A=1, B=9, M=2, N=10
+                    if (
+                        np.array_equal(current_measurement, first_measurement) or
+                        (df.iloc[i]['A'] == '1' and df.iloc[i]['B'] == '9' and df.iloc[i]['M'] == '2' and df.iloc[i]['N'] == '10')
+                    ):
                         survey_counter += 1  # Increment survey number
-                    
+
                     # Correctly assign the survey number to the DataFrame
                     df.at[i, 'Survey'] = survey_counter
                                      
@@ -194,7 +211,7 @@ def load_amp_files(file_paths, n_elec_bh=8, delete_columns=None, clear_electrode
                 if col not in df.columns:
                     df[col] = np.nan
 
-        df_concat = pd.concat(all_dfs, ignore_index=True, join='outer')        # Concatenate all DataFrames into one large DataFrame
+        df_concat = pd.concat(all_dfs, ignore_index=False, join='outer')        # Concatenate all DataFrames into one large DataFrame
         return df_concat
     
     except Exception as e:
@@ -223,58 +240,20 @@ def files_to_convert(raw_data_folder, csv_data_folder):
 
     return to_convert_paths
 
-def fuse_csv_files(folder_path, output_file):
-    # Define the header with all required columns
-    header = [
-        'No.', 'Time', 'A', 'B', 'M', 'N', 'I(mA)', 'Voltage(V)', 'Res.(ohm)', 'Error(%)', 'T(On)', 'T(0)', 'T(N):01',
-        'App.Ch.(ms)', 'Error(ms)', 'T(N):02', 'App.Ch.(ms)', 'Error(ms)', 'T(N):03', 'App.Ch.(ms)', 'Error(ms)',
-        'T(N):04', 'App.Ch.(ms)', 'Error(ms)', 'T(N):05', 'App.Ch.(ms)', 'Error(ms)', 'T(N):06', 'App.Ch.(ms)',
-        'Error(ms)', 'T(N):07', 'App.Ch.(ms)', 'Error(ms)', 'T(N):08', 'App.Ch.(ms)', 'Error(ms)', 'T(N):09',
-        'App.Ch.(ms)', 'Error(ms)', 'T(N):10', 'App.Ch.(ms)', 'Error(ms)', 'Survey', 'SurveyDate', 'MeasDate', 'meas',
-        'k', 'meas_ele', 'rhoa'
-    ]
-
-    # Get all CSV files in the folder
-    csv_files = glob.glob(os.path.join(folder_path, '*.csv'))
-
-    # List to store DataFrames
-    all_dfs = []
-
-    for file in csv_files:
-        # Read the CSV file
-        df = pd.read_csv(file, sep=';')
-
-        # Ensure all columns are present
-        for col in header:
-            if col not in df.columns:
-                df[col] = pd.NA
-
-        # Reorder columns to match the header
-        df = df[header]
-
-        # Append the DataFrame to the list
-        all_dfs.append(df)
-
-    # Concatenate all DataFrames
-    df_concat = pd.concat(all_dfs, ignore_index=True)
-
-    # Save the concatenated DataFrame to a new CSV file
-    df_concat.to_csv(output_file, sep=';', index=False)
-
-    return output_file
-
 # Add the __name__ guard
 if __name__ == '__main__':
 
-    file = 'C:/Users/alexi/OneDrive - ETS/00-Maitrise_Recherche/01-Geophysique/00-Berlier-Bergman/06-Mesures_SAS4000/Mesures TL-ERT SAS4000 2024/'
-    FLO_1= file + '08_BB_1211-1311_2h' + '.AMP'
-    FLO_2= file + '11_BB_1311-FLO_8mn' + '.AMP'
-    FLO_3= file + '12_BB_1311_1811_3h' + '.AMP'
+    fused_csv_file = 'C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/fused_AMP_SAS4000_V2.csv'
+
+    # Choose a specific file to load
+    #FLO_1= file + '08_BB_1211-1311_2h' + '.AMP'
+    #FLO_2= file + '11_BB_1311-FLO_8mn' + '.AMP'
+    #FLO_3= file + '12_BB_1311_1811_3h' + '.AMP'
 
 
-    df = load_amp_files([FLO_1,FLO_2,FLO_3], clear_electrodes=[18], detect_by_first_measurement=True)
+    df = load_amp_files()
 
-    df.to_csv('D:/02_ERT_Data/FLOOD_V2.csv', sep=';', index=False)
+    df.to_csv(fused_csv_file, sep=';', index=False)
 
     """
     data_folder_path = 'D:/02_ERT_Data/All_Data/'

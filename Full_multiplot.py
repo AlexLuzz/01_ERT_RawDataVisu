@@ -233,12 +233,12 @@ def plotABMN(ax, scheme, measurement_idxs):
                     patchA=None, alpha=0.75))
             """
     
-    ax.set_title(f"Measurement sensitivity \n (up to 4 Channels)")
+    ax.set_title(f"Measurement sensitivity /n (up to 4 Channels)")
     props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-    txt_AB = f"A_B: {scheme['a'][measurement_idxs[i]]+1}_{scheme['b'][measurement_idxs[i]]+1} \n "
+    txt_AB = f"A_B: {scheme['a'][measurement_idxs[i]]+1}_{scheme['b'][measurement_idxs[i]]+1} /n "
     txt_MNs = ""
     for i in range(len(measurement_idxs)):
-        txt_MNs = txt_MNs + f"M_N_C{i}: {scheme['m'][measurement_idxs[i]]+1}_{scheme['n'][measurement_idxs[i]]+1} \n "
+        txt_MNs = txt_MNs + f"M_N_C{i}: {scheme['m'][measurement_idxs[i]]+1}_{scheme['n'][measurement_idxs[i]]+1} /n "
     ax.text(0.5, -1.2, txt_AB + txt_MNs, transform=ax.transAxes, fontsize=15, verticalalignment="top", horizontalalignment="center", bbox=props)
     return ax
 
@@ -338,23 +338,24 @@ def plot_histogram(df, column, bins=20, ax=None):
 
 if __name__ == "__main__":
 
-    path = 'D:/01-Coding/01_BB_ERT/'
-    df = pd.read_csv('D:/02_ERT_Data/fused_data_04oct24_15mar25.csv', sep=';')
-    one_df = pd.read_csv('D:/02_ERT_Data/All_Data_csv/06_BB_1211_FAST-2STK_KR.csv', sep=';')
+    path = 'C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/01_ERT_RawDataVisu/'
+    df = pd.read_csv('C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/fused_AMP_SAS4000.csv', sep=';')
     
     #df = df[df['Res.(ohm)'] >= 0.5] 
-    #df = df[df['meas'] != 'Unknown']
+    df = df[df['meas'] != 'Unknown']
     
     # Extract a period
-    df = df[df['SurveyDate'] > '2024-11-21 12:00:00']
-    df = df[df['SurveyDate'] < '2024-11-25 12:00:00']
+    #df = df[df['SurveyDate'] > '2024-11-21 12:00:00']
+    #df = df[df['SurveyDate'] < '2024-11-25 12:00:00']
 
     # Load data and mesh files
-    data_file = os.path.join(path, '04_DataContainers/data_20_11_2024_20_20.ohm')
-    mesh_file = os.path.join(path, '00_grid/mesh_high_densite.bms')
+    data_file = os.path.join(path, 'stuff/data_20_11_2024_20_20.ohm')
+    mesh_file = os.path.join(path, 'stuff/mesh_high_densite.bms')
+    one_df_file = os.path.join(path, 'stuff/06_BB_1211_FAST-2STK_KR.csv')
+    one_df = pd.read_csv(one_df_file, sep=';')
 
     # Load Jacobian matrix and calculate normalized sensitivity
-    jacobian = np.load(os.path.join(path, "14_Sensitvity/jacobian_matrix.npy"))
+    jacobian = np.load(os.path.join(path, "stuff/jacobian_matrix.npy"))
 
     data = pg.load(data_file, verbose=True)
     mesh = pg.load(mesh_file)
@@ -404,4 +405,4 @@ if __name__ == "__main__":
 
         figs.append(fig)
 
-    saveFiguresToPDF(figs, f"D:/02_ERT_Data/multiplot_HRE10%.pdf")
+    saveFiguresToPDF(figs, 'C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/Fulldata.csv')
