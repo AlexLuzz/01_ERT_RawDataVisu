@@ -339,13 +339,13 @@ def plot_histogram(df, column, bins=20, ax=None):
 if __name__ == "__main__":
 
     path = 'C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/01_ERT_RawDataVisu/'
-    df = pd.read_csv('C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/fused_AMP_SAS4000.csv', sep=';')
+    df = pd.read_csv('C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/fused_SAS4000_OhmPi.csv', sep=';')
     
     #df = df[df['Res.(ohm)'] >= 0.5] 
     df = df[df['meas'] != 'Unknown']
     
     # Extract a period
-    #df = df[df['SurveyDate'] > '2024-11-21 12:00:00']
+    df = df[df['SurveyDate'] > '2025-04-01 12:00:00']
     #df = df[df['SurveyDate'] < '2024-11-25 12:00:00']
 
     # Load data and mesh files
@@ -405,4 +405,4 @@ if __name__ == "__main__":
 
         figs.append(fig)
 
-    saveFiguresToPDF(figs, 'C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/Fulldata.pdf')
+    saveFiguresToPDF(figs, 'C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/Fulldata_s4k_ohmpi_recent.pdf')

@@ -253,7 +253,7 @@ if __name__ == '__main__':
 
     df = load_amp_files()
 
-    df.to_csv(fused_csv_file, sep=';', index=False)
+    df.to_csv(fused_s4k_data, sep=';', index=False)
 
     """
     data_folder_path = 'D:/02_ERT_Data/All_Data/'
