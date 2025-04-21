@@ -90,7 +90,7 @@ def plot_var_rho_app(df, filter_meas_ele=None, filter_meas=None, sample_factor=1
     # Create a single legend
     # ax.legend()
     ax.set_ylabel('App. Res. variations : Δρ/ρ (%)')
-    ax.set_ylim(-10, 10)  # Set y-axis limits between -10 and 10%
+    #ax.set_ylim(-10, 10)  # Set y-axis limits between -10 and 10%
     #ax.set_yscale('log')
     ax.grid(visible=True, linestyle='--', alpha=0.6)
     ax.xaxis.set_visible(False)
@@ -158,7 +158,7 @@ def plot_weather(start_date, end_date, ax=None, temp_step=2, precip_step=24, dat
     # Format x-axis for date and time
     locator = mdates.AutoDateLocator()
     ax.xaxis.set_major_locator(locator)
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d %H'))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=60, ha='right')
 
     ax.set_xlim(pd.to_datetime(start_date),

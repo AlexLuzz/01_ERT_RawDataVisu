@@ -243,7 +243,7 @@ def files_to_convert(raw_data_folder, csv_data_folder):
 # Add the __name__ guard
 if __name__ == '__main__':
 
-    fused_csv_file = 'C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/fused_AMP_SAS4000_V2.csv'
+    fused_s4k_data = 'C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/fused_AMP_SAS4000.csv'
 
     # Choose a specific file to load
     #FLO_1= file + '08_BB_1211-1311_2h' + '.AMP'

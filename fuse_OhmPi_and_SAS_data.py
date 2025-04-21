@@ -21,27 +21,21 @@ def fuse_csv_files(folder_path, output_file):
 
     for file in csv_files:
         # Read the CSV file
-        df = pd.read_csv(file, sep=';')
-
-        # Ensure all columns are present
-        for col in header:
-            if col not in df.columns:
-                df[col] = pd.NA
-
-        # Reorder columns to match the header
-        df = df[header]
+        df = pd.read_csv(file, sep=',')
 
         # Append the DataFrame to the list
         all_dfs.append(df)
 
     # Concatenate all DataFrames
     df_concat = pd.concat(all_dfs, ignore_index=True)
-
     # Save the concatenated DataFrame to a new CSV file
     df_concat.to_csv(output_file, sep=';', index=False)
 
 # Example usage
 if __name__ == '__main__':
-    folder_path = 'D:/02_ERT_Data/All_Data_csv/'
-    output_file = 'D:/02_ERT_Data/fused_data_04oct24_01mar25.csv'
-    fuse_csv_files(folder_path, output_file)
+    fused_s4k_data = 'C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/fused_AMP_SAS4000.csv'
+    ohmpi_data_folder = 'C:/Users/AQ96560/OneDrive - ETS/Géophysique appliquée - GTO365 - 03 - Ohmpi - IV à Laval/'
+
+
+    fused_ohmpi_data = 'C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/fused_OhmPi.csv'
+    fuse_csv_files(ohmpi_data_folder, fused_ohmpi_data)
