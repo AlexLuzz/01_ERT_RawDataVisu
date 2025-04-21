@@ -405,4 +405,4 @@ if __name__ == "__main__":
 
         figs.append(fig)
 
-    saveFiguresToPDF(figs, 'C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/Fulldata.csv')
+    saveFiguresToPDF(figs, 'C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/Fulldata.pdf')
