@@ -131,7 +131,7 @@ def load_amp_files(file_paths=None, n_elec_bh=8, delete_columns=None, clear_elec
                 df.columns.values[col_index] = f'App.Ch.{i:02}(ms)'
 
             # Rename columns to remove '(x)' and keep only the base name
-            df.columns = df.columns.str.replace(r'/(x/)', '', regex=True)
+            df.columns = df.columns.str.replace(r'\(x\)', '', regex=True)
 
             for electrode_col in ['A', 'B', 'M', 'N']:
                 if electrode_col in df.columns:

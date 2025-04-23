@@ -15,7 +15,22 @@ from datetime import datetime
 # Set general font size
 plt.rcParams.update({'font.size': 13})
 
-def plot_rho_app(df, filter_meas_ele=None, filter_meas=None, sample_factor=1, ax=None):
+def plot_raw_meas(df, filter_meas_ele=None, filter_meas=None, sample_factor=1, ax=None, plot_type='absolute', data_type='rhoa'):
+    """
+    Plot raw measurements: apparent resistivity, its variation, or IP raw data.
+
+    Parameters:
+    - df: DataFrame containing the data.
+    - filter_meas_ele: Filter for specific measurement electrodes.
+    - filter_meas: Filter for specific measurement types.
+    - sample_factor: Sampling factor to reduce the number of points plotted.
+    - ax: Matplotlib axis object (optional).
+    - plot_type: 'absolute' for absolute values, 'variation' for relative variations.
+    - data_type: 'rhoa' for apparent resistivity, 'ip' for IP decay data.
+
+    Returns:
+    - fig, ax: The figure and axis objects.
+    """
     # Apply filters if provided
     filtered_df = df.copy()
     if filter_meas_ele is not None:
@@ -39,59 +54,30 @@ def plot_rho_app(df, filter_meas_ele=None, filter_meas=None, sample_factor=1, ax
     new_cmap = original_cmap(np.linspace(0, 1, len(grouped)))
 
     for (i, (meas, group)) in enumerate(grouped):
-        # Prepare time steps
         t = pd.to_datetime(group['SurveyDate'], format='%Y-%m-%d %H:%M')
-        ax.scatter(t, group['rhoa'], color=new_cmap[i], label=f"{meas}, Channel:{i}, (k={group['k'].iloc[0]:.2f})", alpha=0.8, s=25)
 
-    # Collect handles and labels from both axes
-    handles1, labels1 = ax.get_legend_handles_labels()
+        if data_type == 'rhoa':
+            if plot_type == 'absolute':
+                ax.scatter(t, group['rhoa'], color=new_cmap[i], label=f"{meas}, Channel:{i}, (k={group['k'].iloc[0]:.2f})", alpha=0.8, s=25)
+            elif plot_type == 'variation':
+                ratio_data = (group['rhoa'] / group['rhoa'].iloc[0] - 1) * 100
+                ax.scatter(t, ratio_data, color=new_cmap[i], label=f"{meas}_ratios", alpha=0.6, s=25, marker='^')
+        elif data_type == 'ip':
+            ip_sum = group[[f'App.Ch.{j:02}(ms)' for j in range(1, 11)]].sum(axis=1)
+            if plot_type == 'absolute':
+                ax.scatter(t, ip_sum, color=new_cmap[i], label=f"{meas}, IP Sum", alpha=0.8, s=25)
+            elif plot_type == 'variation':
+                ratio_data = (ip_sum / ip_sum.iloc[0] - 1) * 100
+                ax.scatter(t, ratio_data, color=new_cmap[i], label=f"{meas}_IP ratios", alpha=0.6, s=25, marker='^')
 
-    # Create a single legend
-    ax.legend()
-    ax.set_ylabel('App. Resistivity : ρ app (ohm.m)')
-    #ax.set_yscale('log')
-    ax.grid(visible=True, linestyle='--', alpha=0.6)
-    ax.xaxis.set_visible(False)
-    plt.close('all')
+    ylabel = {
+        ('rhoa', 'absolute'): 'App. Resistivity : ρ app (ohm.m)',
+        ('rhoa', 'variation'): 'App. Res. variations : Δρ/ρ (%)',
+        ('ip', 'absolute'): 'IP Raw Data Sum',
+        ('ip', 'variation'): 'IP Data variations : ΔIP/IP (%)'
+    }
+    ax.set_ylabel(ylabel[(data_type, plot_type)])
 
-    ax.grid(which='major', color='grey', linestyle='-', linewidth=0.5, alpha=0.6)
-
-    return fig, ax
-
-def plot_var_rho_app(df, filter_meas_ele=None, filter_meas=None, sample_factor=1, ax=None):
-    # Apply filters if provided
-    filtered_df = df.copy()
-    if filter_meas_ele is not None:
-        filtered_df = filtered_df[filtered_df['meas_ele'] == filter_meas_ele]
-
-    if filter_meas is not None:
-        filtered_df = filtered_df[filtered_df['meas'] == filter_meas]
-    
-    # Apply sampling if sample_factor > 1
-    if sample_factor > 1:
-        filtered_df = filtered_df.iloc[::sample_factor]
-
-    # Create the figure and axis if not provided
-    if ax is None:
-        fig, ax = plt.subplots(figsize=(14, 5))
-    else:
-        fig = ax.get_figure()
-
-    grouped = filtered_df.groupby('meas')
-    original_cmap = cm.Spectral_r
-    new_cmap = original_cmap(np.linspace(0, 1, len(grouped)))
-
-    for (i, (meas, group)) in enumerate(grouped):
-        ratio_data = (group['rhoa'] / group['rhoa'].iloc[0] - 1)*100
-        # Prepare time steps
-        t = pd.to_datetime(group['SurveyDate'], format='%Y-%m-%d %H:%M')
-        ax.scatter(t, ratio_data, color=new_cmap[i], label=f"{meas}_ratios", alpha=0.6, s=25, marker='^')
-
-    # Create a single legend
-    # ax.legend()
-    ax.set_ylabel('App. Res. variations : Δρ/ρ (%)')
-    #ax.set_ylim(-10, 10)  # Set y-axis limits between -10 and 10%
-    #ax.set_yscale('log')
     ax.grid(visible=True, linestyle='--', alpha=0.6)
     ax.xaxis.set_visible(False)
     plt.close('all')
@@ -146,14 +132,27 @@ def plot_weather(start_date, end_date, ax=None, temp_step=2, precip_step=24, dat
         fig = ax.get_figure()  # Get the figure from the provided axis
 
     # Plot precipitation data
-    ax.bar(times_aggregated_precip, precipitation_aggregated, width=0.1, alpha=0.8, color='royalblue', label='Precipitation (mm)')
+    ax.bar(times_aggregated_precip, precipitation_aggregated, width=0.3, alpha=0.8, color='royalblue', label='Precipitation (mm)')
     ax.set_ylabel('Precipitation (mm)', color='royalblue')
     ax.tick_params(axis='y', labelcolor='royalblue')
 
+    # Plot temperature data with color change below 0°C
     ax2 = ax.twinx()
-    ax2.plot(times_aggregated_temp, temperature_aggregated, color='orange', label='Temperature (°C)', linestyle='-', linewidth=4)
+    temp_colors = ['deepskyblue' if temp < 0 else 'orange' for temp in temperature_aggregated]
+    ax2.plot(times_aggregated_temp, temperature_aggregated, color='orange', linestyle='-', linewidth=2.5, label='Temperature (°C)')
+    for i in range(len(times_aggregated_temp) - 1):
+        ax2.plot(
+            times_aggregated_temp[i:i + 2],
+            temperature_aggregated[i:i + 2],
+            color=temp_colors[i],
+            linestyle='-',
+            linewidth=4,
+        )
     ax2.set_ylabel('Temperature (°C)', color='orange')
     ax2.tick_params(axis='y', labelcolor='orange')
+
+    # Add a horizontal line at 0°C
+    ax2.axhline(0, color='black', linestyle='--', linewidth=1.5, alpha=0.8)
 
     # Format x-axis for date and time
     locator = mdates.AutoDateLocator()
@@ -161,12 +160,11 @@ def plot_weather(start_date, end_date, ax=None, temp_step=2, precip_step=24, dat
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=60, ha='right')
 
-    ax.set_xlim(pd.to_datetime(start_date),
-                pd.to_datetime(end_date))
+    ax.set_xlim(pd.to_datetime(start_date), pd.to_datetime(end_date))
 
     # Add legends
-    #ax.legend(loc='upper left')
-    #ax2.legend(loc='upper right')
+    # ax.legend(loc='upper left')
+    # ax2.legend(loc='upper right')
 
     if date:
         date = pd.to_datetime(date)
@@ -179,7 +177,7 @@ def plot_weather(start_date, end_date, ax=None, temp_step=2, precip_step=24, dat
         ax.axvline(x=display_ref, color='grey', linewidth=1.5, alpha=0.7)
         title += f", ref survey:{display_ref}"
     
-    #plt.title(title)
+    # plt.title(title)
 
     ax.grid(which='major', color='grey', linestyle='-', linewidth=0.5, alpha=0.6)
 
@@ -233,12 +231,12 @@ def plotABMN(ax, scheme, measurement_idxs):
                     patchA=None, alpha=0.75))
             """
     
-    ax.set_title(f"Measurement sensitivity /n (up to 4 Channels)")
+    ax.set_title(f"Measurement sensitivity \n (up to 4 Channels)")
     props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-    txt_AB = f"A_B: {scheme['a'][measurement_idxs[i]]+1}_{scheme['b'][measurement_idxs[i]]+1} /n "
+    txt_AB = f"A_B: {scheme['a'][measurement_idxs[i]]+1}_{scheme['b'][measurement_idxs[i]]+1} \n "
     txt_MNs = ""
     for i in range(len(measurement_idxs)):
-        txt_MNs = txt_MNs + f"M_N_C{i}: {scheme['m'][measurement_idxs[i]]+1}_{scheme['n'][measurement_idxs[i]]+1} /n "
+        txt_MNs = txt_MNs + f"M_N_C{i}: {scheme['m'][measurement_idxs[i]]+1}_{scheme['n'][measurement_idxs[i]]+1} \n "
     ax.text(0.5, -1.2, txt_AB + txt_MNs, transform=ax.transAxes, fontsize=15, verticalalignment="top", horizontalalignment="center", bbox=props)
     return ax
 
@@ -341,12 +339,13 @@ if __name__ == "__main__":
     path = 'C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/01_ERT_RawDataVisu/'
     df = pd.read_csv('C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/fused_SAS4000_OhmPi.csv', sep=';')
     
-    #df = df[df['Res.(ohm)'] >= 0.5] 
+    # Filter data
     df = df[df['meas'] != 'Unknown']
-    
-    # Extract a period
-    df = df[df['SurveyDate'] > '2025-04-01 12:00:00']
-    #df = df[df['SurveyDate'] < '2024-11-25 12:00:00']
+
+    # For HRE : between 2024-11-18 and 2024-11-30
+    # For OhmPi : after 2025-04-01
+    #df = df[df['SurveyDate'] > '2025-04-01 12:00:00']
+    #df = df[df['SurveyDate'] < '2024-11-30 12:00:00']
 
     # Load data and mesh files
     data_file = os.path.join(path, 'stuff/data_20_11_2024_20_20.ohm')
@@ -367,7 +366,6 @@ if __name__ == "__main__":
 
     # To plot sensitivity of one measurement
     meas_ele = df['meas_ele'].unique()
-    #meas_ele = ['28_44']
     figs = []
     for meas in meas_ele:
         
@@ -390,14 +388,14 @@ if __name__ == "__main__":
         # To plot sensitivity of one measurement
         index_jaco = one_df.loc[one_df['meas_ele'] == meas].index
 
-        plot_rho_app(filtered_df, ax=ax1)
-        plot_var_rho_app(filtered_df, ax=ax2)
+        # Plotting rhoa or IP data, absolute or variation
+        plot_raw_meas(filtered_df, ax=ax1, plot_type='absolute', data_type='rhoa')  
+        plot_raw_meas(filtered_df, ax=ax2, plot_type='variation', data_type='rhoa') 
+
         plot_sensitivity(jacobian, fop.paraDomain, index_jaco, ax=ax4)
         plotABMN(ax4, data, index_jaco)
         draw_shapes(ax4)
-        plot_histogram(filtered_df, column='I(mA)', ax=ax5, bins=5) # Voltage(V)
-        #plot_histogram(filtered_df, column='Error(%)', ax=ax6) # Error(%)
-
+        plot_histogram(filtered_df, column='I(mA)', ax=ax5, bins=5)  # Voltage(V)
         plot_weather(filtered_df['SurveyDate'].iloc[0], filtered_df['SurveyDate'].iloc[-1], ax=ax3)
 
         plt.tight_layout()  # Adjust spacing
@@ -405,4 +403,4 @@ if __name__ == "__main__":
 
         figs.append(fig)
 
-    saveFiguresToPDF(figs, 'C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/Fulldata_s4k_ohmpi_recent.pdf')
+    saveFiguresToPDF(figs, 'C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/FULLDATA_rhoa.pdf')
