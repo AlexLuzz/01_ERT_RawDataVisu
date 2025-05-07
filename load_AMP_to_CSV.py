@@ -68,8 +68,10 @@ def load_amp_files(file_paths=None, n_elec_bh=8, delete_columns=None, clear_elec
     :return: A concatenated pandas DataFrame containing the data from all files with an additional 'Survey' column.
     """
     try:
-        # Default folder path
-        default_folder = 'C:/Users/AQ96560/OneDrive - ETS/Géophysique appliquée - GTO365 - Berlier-Bergman Time-Lapse/'
+        # Default folder path, from ETS computer
+        #default_folder = 'C:/Users/AQ96560/OneDrive - ETS/Géophysique appliquée - GTO365 - Berlier-Bergman Time-Lapse/'
+        # Default folder path, from home computer
+        default_folder = 'C:/Users/alexi/OneDrive - ETS/Géophysique appliquée - GTO365 - Berlier-Bergman Time-Lapse/'
 
         # If file_paths is None, load all .AMP files from the default folder
         if file_paths is None:
@@ -243,7 +245,12 @@ def files_to_convert(raw_data_folder, csv_data_folder):
 # Add the __name__ guard
 if __name__ == '__main__':
 
-    fused_s4k_data = 'C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/fused_AMP_SAS4000.csv'
+    # From ETS computer
+    #fused_s4k_data = 'C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/ERT_Data/fused_AMP_SAS4000.csv'
+
+    # From home computer
+    fused_s4k_data = 'C:/Users/alexi/OneDrive - ETS/02 - Alexis Luzy/ERT_Data/fused_AMP_SAS4000.csv'
+
 
     # Choose a specific file to load
     #FLO_1= file + '08_BB_1211-1311_2h' + '.AMP'
