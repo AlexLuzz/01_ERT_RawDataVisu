@@ -336,8 +336,15 @@ def plot_histogram(df, column, bins=20, ax=None):
 
 if __name__ == "__main__":
 
-    path = 'C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/01_ERT_RawDataVisu/'
-    df = pd.read_csv('C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/fused_SAS4000_OhmPi.csv', sep=';')
+    user_ETS = 'AQ96560'
+    user_home = 'alexi'
+    user = user_home
+
+    Onedrive_path = f'C:/Users/{user}/OneDrive - ETS/02 - Alexis Luzy/'
+
+    path = Onedrive_path + '02 - Alexis Luzy/01_ERT_RawDataVisu/'
+
+    df = pd.read_csv(Onedrive_path + 'ERT_Data/fused_SAS4000_OhmPi.csv', sep=';')
     
     # Filter data
     df = df[df['meas'] != 'Unknown']
