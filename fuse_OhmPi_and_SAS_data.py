@@ -114,9 +114,19 @@ def fuse_sas4k_OhmPi_data(fused_sas4k_file, fused_ohmpi_file, output_file, colum
 
 # Example usage
 if __name__ == '__main__':
-    fused_s4k_data = 'C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/fused_AMP_SAS4000.csv'
-    ohmpi_data_folder = 'C:/Users/AQ96560/OneDrive - ETS/Géophysique appliquée - GTO365 - 03 - Ohmpi - IV à Laval/'
-    fused_ohmpi_data = 'C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/fused_OhmPi.csv'
+
+    user_ETS = 'AQ96560'
+    user_home = 'alexi'
+    user = user_home
+
+    Onedrive_path = f'C:/Users/{user}/OneDrive - ETS/'
+    fused_s4k_data = Onedrive_path + '02 - Alexis Luzy/ERT_Data/fused_AMP_SAS4000.csv'
+    ohmpi_data_folder = Onedrive_path + 'Géophysique appliquée - GTO365 - 03 - Ohmpi - IV à Laval/'
+    fused_ohmpi_data = Onedrive_path + '02 - Alexis Luzy/ERT_Data/fused_OhmPi.csv'
+
+    #fused_s4k_data = 'C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/fused_AMP_SAS4000.csv'
+    #ohmpi_data_folder = 'C:/Users/AQ96560/OneDrive - ETS/Géophysique appliquée - GTO365 - 03 - Ohmpi - IV à Laval/'
+    #fused_ohmpi_data = 'C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/fused_OhmPi.csv'
     
     fuse_csv_files(ohmpi_data_folder, fused_ohmpi_data)
 
@@ -130,4 +140,4 @@ if __name__ == '__main__':
         'R_std [%]': 'Error(%)',
     }
 
-    fuse_sas4k_OhmPi_data(fused_s4k_data, fused_ohmpi_data, 'C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/fused_SAS4000_OhmPi.csv', column_mapping)
+    fuse_sas4k_OhmPi_data(fused_s4k_data, fused_ohmpi_data, Onedrive_path + '02 - Alexis Luzy/ERT_Data/fused_SAS4000_OhmPi.csv', column_mapping)
