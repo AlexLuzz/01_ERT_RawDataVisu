@@ -26,7 +26,7 @@ def plot_raw_meas(df, filter_meas_ele=None, filter_meas=None, sample_factor=1, a
     - sample_factor: Sampling factor to reduce the number of points plotted.
     - ax: Matplotlib axis object (optional).
     - plot_type: 'absolute' for absolute values, 'variation' for relative variations.
-    - data_type: 'rhoa' for apparent resistivity, 'ip' for IP decay data.
+    - data_type: 'rhoa' for apparent resistivity, 'ip' for IP decay data, 'R_ab' for R_ab [KOhm] data, 'Vmn_std' for Vmn_std [%] data.
 
     Returns:
     - fig, ax: The figure and axis objects.
@@ -69,12 +69,28 @@ def plot_raw_meas(df, filter_meas_ele=None, filter_meas=None, sample_factor=1, a
             elif plot_type == 'variation':
                 ratio_data = (ip_sum / ip_sum.iloc[0] - 1) * 100
                 ax.scatter(t, ratio_data, color=new_cmap[i], label=f"{meas}_IP ratios", alpha=0.6, s=25, marker='^')
+        elif data_type == 'R_ab':
+            if plot_type == 'absolute':
+                ax.scatter(t, group['R_ab [kOhm]'], color=new_cmap[i], label=f"{meas}, IP Sum", alpha=0.8, s=25)
+            elif plot_type == 'variation':
+                ratio_data = (group['R_ab [kOhm]'] / group['R_ab [kOhm]'].iloc[0] - 1) * 100
+                ax.scatter(t, ratio_data, color=new_cmap[i], label=f"{meas}_IP ratios", alpha=0.6, s=25, marker='^')
+        elif data_type == 'Vmn_std':
+            if plot_type == 'absolute':
+                ax.scatter(t, group['Vmn_std [%]'], color=new_cmap[i], label=f"{meas}, IP Sum", alpha=0.8, s=25)
+            elif plot_type == 'variation':
+                ratio_data = (group['Vmn_std [%]'] / group['Vmn_std [%]'].iloc[0] - 1) * 100
+                ax.scatter(t, ratio_data, color=new_cmap[i], label=f"{meas}_IP ratios", alpha=0.6, s=25, marker='^')
 
     ylabel = {
         ('rhoa', 'absolute'): 'App. Resistivity : ρ app (ohm.m)',
         ('rhoa', 'variation'): 'App. Res. variations : Δρ/ρ (%)',
         ('ip', 'absolute'): 'IP Raw Data Sum',
-        ('ip', 'variation'): 'IP Data variations : ΔIP/IP (%)'
+        ('ip', 'variation'): 'IP Data variations : ΔIP/IP (%)',
+        ('R_ab', 'absolute'): 'R_ab [kOhm]',
+        ('R_ab', 'variation'): 'R_ab variations : ΔR_ab/R_ab (%)',
+        ('Vmn_std', 'absolute'): 'Vmn_std [%]',
+        ('Vmn_std', 'variation'): 'Vmn_std variations : ΔVmn_std/Vmn_std (%)'
     }
     ax.set_ylabel(ylabel[(data_type, plot_type)])
 
@@ -342,26 +358,29 @@ if __name__ == "__main__":
 
     Onedrive_path = f'C:/Users/{user}/OneDrive - ETS/02 - Alexis Luzy/'
 
-    path = Onedrive_path + '02 - Alexis Luzy/01_ERT_RawDataVisu/'
+    stuff_path = Onedrive_path + '00_Github_Code/01_ERT_RawDataVisu/'
 
     df = pd.read_csv(Onedrive_path + 'ERT_Data/fused_SAS4000_OhmPi.csv', sep=';')
     
+    # Where to save the multiplot figures
+    save_path = os.path.join(Onedrive_path, 'ERT_Raw_Data_Visu/1erAvril_au_7mai_abs_VmnStd_Rab.pdf')
+
     # Filter data
     df = df[df['meas'] != 'Unknown']
 
     # For HRE : between 2024-11-18 and 2024-11-30
     # For OhmPi : after 2025-04-01
-    #df = df[df['SurveyDate'] > '2025-04-01 12:00:00']
+    df = df[df['SurveyDate'] > '2025-04-01 12:00:00']
     #df = df[df['SurveyDate'] < '2024-11-30 12:00:00']
 
     # Load data and mesh files
-    data_file = os.path.join(path, 'stuff/data_20_11_2024_20_20.ohm')
-    mesh_file = os.path.join(path, 'stuff/mesh_high_densite.bms')
-    one_df_file = os.path.join(path, 'stuff/06_BB_1211_FAST-2STK_KR.csv')
+    data_file = os.path.join(stuff_path, 'stuff/data_20_11_2024_20_20.ohm')
+    mesh_file = os.path.join(stuff_path, 'stuff/mesh_high_densite.bms')
+    one_df_file = os.path.join(stuff_path, 'stuff/06_BB_1211_FAST-2STK_KR.csv')
     one_df = pd.read_csv(one_df_file, sep=';')
 
     # Load Jacobian matrix and calculate normalized sensitivity
-    jacobian = np.load(os.path.join(path, "stuff/jacobian_matrix.npy"))
+    jacobian = np.load(os.path.join(stuff_path, "stuff/jacobian_matrix.npy"))
 
     data = pg.load(data_file, verbose=True)
     mesh = pg.load(mesh_file)
@@ -396,8 +415,8 @@ if __name__ == "__main__":
         index_jaco = one_df.loc[one_df['meas_ele'] == meas].index
 
         # Plotting rhoa or IP data, absolute or variation
-        plot_raw_meas(filtered_df, ax=ax1, plot_type='absolute', data_type='rhoa')  
-        plot_raw_meas(filtered_df, ax=ax2, plot_type='variation', data_type='rhoa') 
+        plot_raw_meas(filtered_df, ax=ax1, plot_type='absolute', data_type='Vmn_std')
+        plot_raw_meas(filtered_df, ax=ax2, plot_type='absolute', data_type='R_ab') 
 
         plot_sensitivity(jacobian, fop.paraDomain, index_jaco, ax=ax4)
         plotABMN(ax4, data, index_jaco)
@@ -410,4 +429,4 @@ if __name__ == "__main__":
 
         figs.append(fig)
 
-    saveFiguresToPDF(figs, 'C:/Users/AQ96560/OneDrive - ETS/02 - Alexis Luzy/FULLDATA_rhoa.pdf')
+    saveFiguresToPDF(figs, save_path)
